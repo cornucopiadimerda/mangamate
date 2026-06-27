@@ -11,7 +11,7 @@ interface CoverPlaceholderProps {
 }
 
 export function CoverPlaceholder({ seriesId, title, volume, width = 80, height = 120, className = '' }: CoverPlaceholderProps) {
-  const colors = SERIES_COLORS[seriesId] ?? { from: '#1a1a2e', to: '#16213e', text: '#E94560' }
+  const colors = SERIES_COLORS[seriesId] ?? { from: '#1a1a2e', to: '#16213e', text: '#E91E8C' }
   const initial = title.charAt(0).toUpperCase()
   const numericHeight = typeof height === 'number' ? height : 120
 
@@ -69,8 +69,8 @@ export function MissingVolumePlaceholder({ volume, onPress, onAmazon, width = 80
           width,
           height,
           minWidth: width,
-          background: inWishlist ? 'rgba(255,59,48,0.08)' : '#1C1C1E',
-          border: inWishlist ? '1.5px solid rgba(255,59,48,0.4)' : '1.5px dashed #3A3A3C',
+          background: inWishlist ? 'rgba(233,30,140,0.08)' : '#141416',
+          border: inWishlist ? '1.5px solid rgba(233,30,140,0.4)' : '1.5px dashed #282830',
           borderRadius: 6,
           display: 'flex',
           flexDirection: 'column',
@@ -81,14 +81,13 @@ export function MissingVolumePlaceholder({ volume, onPress, onAmazon, width = 80
         }}
       >
         {inWishlist ? (
-          <Heart size={16} color="#FF3B30" fill="#FF3B30" />
+          <Heart size={16} color="#E91E8C" fill="#E91E8C" />
         ) : (
-          <span style={{ fontSize: 18, color: '#3A3A3C' }}>+</span>
+          <span style={{ fontSize: 18, color: '#282830' }}>+</span>
         )}
-        <span style={{ fontSize: 10, fontWeight: 600, color: inWishlist ? '#FF3B30' : '#48484A' }}>{volume}</span>
+        <span style={{ fontSize: 10, fontWeight: 600, color: inWishlist ? '#E91E8C' : '#3C3C44' }}>{volume}</span>
       </button>
 
-      {/* Amazon button — small icon in bottom-right corner */}
       {onAmazon && (
         <button
           onClick={(e) => { e.stopPropagation(); onAmazon() }}
@@ -105,7 +104,7 @@ export function MissingVolumePlaceholder({ volume, onPress, onAmazon, width = 80
             justifyContent: 'center',
             zIndex: 1,
           }}
-          title="Cerca su Amazon"
+          title="Acquista"
         >
           <ShoppingCart size={11} color="#000" />
         </button>

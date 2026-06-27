@@ -19,15 +19,17 @@ export function TabBar() {
     <nav
       className="fixed bottom-0 left-0 right-0 z-50"
       style={{
-        background: 'rgba(10,10,10,0.95)',
+        background: 'rgba(10,10,12,0.96)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
-        borderTop: '0.5px solid #2C2C2E',
+        borderTop: '0.5px solid #1E1E22',
+        // PWA fix: paddingBottom on the nav so the 60px content area is ABOVE the safe zone
+        paddingBottom: 'env(safe-area-inset-bottom)',
       }}
     >
       <div
         className="flex items-center justify-around"
-        style={{ height: 60, paddingBottom: 'env(safe-area-inset-bottom)' }}
+        style={{ height: 60 }}
       >
         {tabs.map(({ href, icon: Icon, label, isCenter }) => {
           const isActive = href === '/' ? pathname === '/' : pathname.startsWith(href)
@@ -40,8 +42,8 @@ export function TabBar() {
                   style={{
                     width: 62,
                     height: 42,
-                    background: '#FF3B30',
-                    boxShadow: '0 2px 12px rgba(255,59,48,0.45)',
+                    background: '#E91E8C',
+                    boxShadow: '0 2px 16px rgba(233,30,140,0.5)',
                     transition: 'transform 0.15s ease',
                   }}
                 >
@@ -59,13 +61,13 @@ export function TabBar() {
             >
               <Icon
                 size={22}
-                color={isActive ? '#FF3B30' : '#8E8E93'}
+                color={isActive ? '#E91E8C' : '#5A5A60'}
                 strokeWidth={isActive ? 2.2 : 1.8}
                 style={{ transition: 'color 0.2s ease' }}
               />
               <span
                 className="text-[9px] font-medium"
-                style={{ color: isActive ? '#FF3B30' : '#8E8E93', transition: 'color 0.2s ease' }}
+                style={{ color: isActive ? '#E91E8C' : '#5A5A60', transition: 'color 0.2s ease' }}
               >
                 {label}
               </span>

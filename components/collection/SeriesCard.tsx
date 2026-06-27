@@ -22,8 +22,8 @@ export function SeriesCard({ series }: { series: CollectionSeries }) {
 
   return (
     <Link href={`/collection/${series.id}`} className="block tap-scale">
-      <div style={{ background: '#1C1C1E', borderRadius: 12, overflow: 'hidden', border: isComplete ? '1px solid rgba(48,209,88,0.3)' : '1px solid #2C2C2E' }}>
-        <div className="relative" style={{ height: 160, overflow: 'hidden', background: '#111' }}>
+      <div style={{ background: '#141416', borderRadius: 12, overflow: 'hidden', border: isComplete ? '1px solid rgba(48,209,88,0.3)' : '1px solid #1E1E22' }}>
+        <div className="relative" style={{ height: 160, overflow: 'hidden', background: '#0E0E11' }}>
           {coverUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={coverUrl} alt={series.title}
@@ -43,14 +43,14 @@ export function SeriesCard({ series }: { series: CollectionSeries }) {
         </div>
         <div className="p-3">
           <p className="font-semibold text-sm truncate" style={{ color: '#FFFFFF' }}>{series.title}</p>
-          <p className="text-xs truncate mt-0.5" style={{ color: '#8E8E93' }}>{series.publisher}</p>
+          <p className="text-xs truncate mt-0.5" style={{ color: '#8A8A8E' }}>{series.publisher}</p>
           <div className="mt-2.5">
             <div className="flex justify-between items-center mb-1">
-              <span style={{ fontSize: 10, color: '#8E8E93' }}>{series.ownedVolumes.length}/{series.totalVolumes ?? '?'}</span>
-              <span style={{ fontSize: 10, fontWeight: 700, color: isComplete ? '#30D158' : '#FF3B30' }}>{series.completionPercent}%</span>
+              <span style={{ fontSize: 10, color: '#8A8A8E' }}>{series.ownedVolumes.length}/{series.totalVolumes ?? '?'}</span>
+              <span style={{ fontSize: 10, fontWeight: 700, color: isComplete ? '#30D158' : '#E91E8C' }}>{series.completionPercent}%</span>
             </div>
-            <div style={{ height: 3, background: '#2C2C2E', borderRadius: 99 }}>
-              <div style={{ height: '100%', width: `${series.completionPercent}%`, background: isComplete ? '#30D158' : '#FF3B30', borderRadius: 99, transition: 'width 0.5s ease' }} />
+            <div style={{ height: 3, background: '#1E1E22', borderRadius: 99 }}>
+              <div style={{ height: '100%', width: `${series.completionPercent}%`, background: isComplete ? '#30D158' : '#E91E8C', borderRadius: 99, transition: 'width 0.5s ease' }} />
             </div>
           </div>
         </div>

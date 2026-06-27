@@ -48,7 +48,6 @@ export default function ScanPage() {
     return () => { streamRef.current?.getTracks().forEach((t) => t.stop()) }
   }, [startCamera])
 
-  // Cycling loading messages
   useEffect(() => {
     if (scanState !== 'analyzing') return
     let msgIdx = 0
@@ -118,9 +117,7 @@ export default function ScanPage() {
 
   const handleConfirm = () => {
     if (!recognitionResult) return
-    const seriesData = MOCK_SERIES.find(
-      (s) => s.title.toLowerCase() === recognitionResult.series.toLowerCase()
-    )
+    const seriesData = MOCK_SERIES.find(s => s.title.toLowerCase() === recognitionResult.series.toLowerCase())
     if (seriesData) {
       setScanState('series-detection')
     } else {
@@ -139,9 +136,7 @@ export default function ScanPage() {
   const handleSeriesChoice = (choice: 'single' | 'range-10' | 'all' | 'custom' | 'cancel') => {
     if (!recognitionResult) return
     const seriesId = recognitionResult.series.toLowerCase().replace(/\s+/g, '-')
-    const seriesData = MOCK_SERIES.find(
-      (s) => s.title.toLowerCase() === recognitionResult.series.toLowerCase()
-    )
+    const seriesData = MOCK_SERIES.find(s => s.title.toLowerCase() === recognitionResult.series.toLowerCase())
     const totalVolumes = seriesData?.totalVolumes ?? 1
     const makeEntry = (n: number): CollectionEntry => ({
       id: `${seriesId}-${n}-${Date.now()}`,
@@ -173,21 +168,19 @@ export default function ScanPage() {
   }
 
   return (
-    // z-index 60 puts the scan overlay above the tab bar (z-50)
     <div className="fixed inset-0 flex flex-col" style={{ background: '#000', zIndex: 60 }}>
-      {/* Camera feed — always mounted */}
       <div className="absolute inset-0">
         {cameraPermission === 'denied' ? (
           <div className="flex flex-col items-center justify-center h-full gap-4 px-8 text-center">
-            <div className="flex items-center justify-center rounded-full" style={{ width: 72, height: 72, background: '#1C1C1E' }}>
+            <div className="flex items-center justify-center rounded-full" style={{ width: 72, height: 72, background: '#141416' }}>
               <span style={{ fontSize: 32 }}>📷</span>
             </div>
             <h2 style={{ fontSize: 20, fontWeight: 700, color: '#FFFFFF' }}>Camera non disponibile</h2>
-            <p style={{ fontSize: 14, color: '#8E8E93', lineHeight: 1.6 }}>
+            <p style={{ fontSize: 14, color: '#8A8A8E', lineHeight: 1.6 }}>
               Abilita l&apos;accesso alla camera nelle impostazioni del browser.
             </p>
             <button onClick={startCamera} className="tap-scale"
-              style={{ padding: '14px 32px', background: '#FF3B30', borderRadius: 14, fontSize: 15, fontWeight: 700, color: '#FFFFFF' }}>
+              style={{ padding: '14px 32px', background: '#E91E8C', borderRadius: 14, fontSize: 15, fontWeight: 700, color: '#FFFFFF' }}>
               Riprova
             </button>
           </div>
@@ -196,47 +189,38 @@ export default function ScanPage() {
         )}
       </div>
 
-      {/* Camera UI overlay */}
       {(scanState === 'camera' || scanState === 'analyzing' || scanState === 'success') && (
         <>
-          {/* Top bar */}
           <div className="relative z-10 flex items-center justify-between px-5"
             style={{ paddingTop: 'calc(env(safe-area-inset-top) + 12px)', paddingBottom: 12 }}>
             <button onClick={() => router.push('/')} className="tap-scale"
-              style={{ width: 36, height: 36, background: 'rgba(30,30,30,0.8)', backdropFilter: 'blur(10px)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              style={{ width: 36, height: 36, background: 'rgba(20,20,22,0.85)', backdropFilter: 'blur(10px)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <X size={18} color="#FFFFFF" />
             </button>
             <p style={{ fontSize: 15, fontWeight: 600, color: '#FFFFFF' }}>Scansiona</p>
             <div style={{ width: 36 }} />
           </div>
 
-          {/* Center content */}
           <div className="relative z-10 flex-1 flex flex-col items-center justify-center">
             {scanState === 'analyzing' ? (
               <div className="flex flex-col items-center gap-6 px-8 w-full">
-                {/* Spinner + pulsing ring */}
                 <div className="relative flex items-center justify-center" style={{ width: 96, height: 96 }}>
                   <div className="absolute inset-0 rounded-full scan-pulse"
-                    style={{ border: '2px solid rgba(255,59,48,0.3)', borderRadius: '50%' }} />
+                    style={{ border: '2px solid rgba(233,30,140,0.3)', borderRadius: '50%' }} />
                   <div className="absolute inset-0 rounded-full animate-spin"
-                    style={{ border: '3px solid transparent', borderTopColor: '#FF3B30', borderRadius: '50%' }} />
+                    style={{ border: '3px solid transparent', borderTopColor: '#E91E8C', borderRadius: '50%' }} />
                   <span style={{ fontSize: 36 }}>🔍</span>
                 </div>
-
-                {/* Progress bar */}
                 <div style={{ width: '100%', maxWidth: 260 }}>
                   <div style={{ height: 3, background: 'rgba(255,255,255,0.1)', borderRadius: 99, overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${loadingProgress}%`, background: '#FF3B30', borderRadius: 99, transition: 'width 0.1s linear' }} />
+                    <div style={{ height: '100%', width: `${loadingProgress}%`, background: '#E91E8C', borderRadius: 99, transition: 'width 0.1s linear' }} />
                   </div>
                 </div>
-
                 <div className="text-center">
                   <p style={{ fontSize: 17, fontWeight: 700, color: '#FFFFFF' }} className="animate-fade-in" key={loadingMessage}>
                     {loadingMessage}
                   </p>
-                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 6 }}>
-                    Powered by Gemini AI
-                  </p>
+                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 6 }}>Powered by Gemini AI</p>
                 </div>
               </div>
             ) : scanState === 'success' ? (
@@ -248,18 +232,16 @@ export default function ScanPage() {
                 <p style={{ fontSize: 18, fontWeight: 700, color: '#30D158' }}>Aggiunto!</p>
               </div>
             ) : (
-              /* Viewfinder brackets */
               <div className="relative" style={{ width: 220, height: 300 }}>
                 <div style={{ position: 'absolute', top: 0, left: 0, width: 28, height: 28, borderTop: '3px solid white', borderLeft: '3px solid white', borderRadius: '2px 0 0 0' }} />
                 <div style={{ position: 'absolute', top: 0, right: 0, width: 28, height: 28, borderTop: '3px solid white', borderRight: '3px solid white', borderRadius: '0 2px 0 0' }} />
                 <div style={{ position: 'absolute', bottom: 0, left: 0, width: 28, height: 28, borderBottom: '3px solid white', borderLeft: '3px solid white', borderRadius: '0 0 0 2px' }} />
                 <div style={{ position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderBottom: '3px solid white', borderRight: '3px solid white', borderRadius: '0 0 2px 0' }} />
-                <div className="scan-pulse" style={{ position: 'absolute', left: 4, right: 4, top: '50%', height: 1, background: 'linear-gradient(90deg, transparent, #FF3B30, transparent)' }} />
+                <div className="scan-pulse" style={{ position: 'absolute', left: 4, right: 4, top: '50%', height: 1, background: 'linear-gradient(90deg, transparent, #E91E8C, transparent)' }} />
               </div>
             )}
           </div>
 
-          {/* Shutter button */}
           {scanState === 'camera' && (
             <div className="relative z-10 flex flex-col items-center gap-4"
               style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 100px)', paddingTop: 20 }}>
@@ -273,63 +255,48 @@ export default function ScanPage() {
         </>
       )}
 
-      {/* Confirmation */}
       {scanState === 'confirming' && recognitionResult && (
-        <div className="absolute inset-0 z-20 flex flex-col" style={{ background: '#080808' }}>
+        <div className="absolute inset-0 z-20 flex flex-col" style={{ background: '#0C0C0E' }}>
           <div className="relative z-10 flex items-center px-5"
             style={{ paddingTop: 'calc(env(safe-area-inset-top) + 12px)', paddingBottom: 12, flexShrink: 0 }}>
             <button onClick={resetToCamera} className="tap-scale"
-              style={{ width: 36, height: 36, background: '#1C1C1E', border: '1px solid #2C2C2E', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              style={{ width: 36, height: 36, background: '#141416', border: '1px solid #1E1E22', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <X size={18} color="#FFFFFF" />
             </button>
           </div>
           <div className="flex-1 overflow-y-auto">
-            <ConfirmationCard
-              result={recognitionResult}
-              onConfirm={handleConfirm}
-              onRetry={resetToCamera}
-              onManualSearch={() => router.push('/collection')}
-            />
+            <ConfirmationCard result={recognitionResult} onConfirm={handleConfirm} onRetry={resetToCamera} onManualSearch={() => router.push('/collection')} />
           </div>
         </div>
       )}
 
-      {/* Error state */}
       {scanState === 'error' && (
         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center px-8 text-center"
-          style={{ background: '#080808' }}>
+          style={{ background: '#0C0C0E' }}>
           <div className="flex items-center justify-center rounded-full mb-6"
-            style={{ width: 80, height: 80, background: 'rgba(255,59,48,0.15)', border: '2px solid rgba(255,59,48,0.3)' }}>
+            style={{ width: 80, height: 80, background: 'rgba(233,30,140,0.12)', border: '2px solid rgba(233,30,140,0.3)' }}>
             <span style={{ fontSize: 36 }}>⚠️</span>
           </div>
           <h2 style={{ fontSize: 20, fontWeight: 800, color: '#FFFFFF', marginBottom: 12 }}>Scansione non riuscita</h2>
-          <p style={{ fontSize: 14, color: '#8E8E93', lineHeight: 1.7, whiteSpace: 'pre-line', marginBottom: 32 }}>
-            {scanError}
-          </p>
+          <p style={{ fontSize: 14, color: '#8A8A8E', lineHeight: 1.7, whiteSpace: 'pre-line', marginBottom: 32 }}>{scanError}</p>
           <button onClick={resetToCamera} className="tap-scale w-full rounded-2xl"
-            style={{ height: 52, background: '#FF3B30', fontSize: 15, fontWeight: 700, color: '#FFFFFF', maxWidth: 280 }}>
+            style={{ height: 52, background: '#E91E8C', fontSize: 15, fontWeight: 700, color: '#FFFFFF', maxWidth: 280 }}>
             Riprova
           </button>
         </div>
       )}
 
-      {/* Series detection */}
       {scanState === 'series-detection' && recognitionResult && (
         <>
-          <div className="absolute inset-0 z-20" style={{ background: '#080808' }}>
+          <div className="absolute inset-0 z-20" style={{ background: '#0C0C0E' }}>
             <div className="relative z-10 flex items-center px-5"
               style={{ paddingTop: 'calc(env(safe-area-inset-top) + 12px)', paddingBottom: 12 }}>
               <button onClick={resetToCamera} className="tap-scale"
-                style={{ width: 36, height: 36, background: '#1C1C1E', border: '1px solid #2C2C2E', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                style={{ width: 36, height: 36, background: '#141416', border: '1px solid #1E1E22', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <X size={18} color="#FFFFFF" />
               </button>
             </div>
-            <ConfirmationCard
-              result={recognitionResult}
-              onConfirm={handleConfirm}
-              onRetry={resetToCamera}
-              onManualSearch={() => router.push('/collection')}
-            />
+            <ConfirmationCard result={recognitionResult} onConfirm={handleConfirm} onRetry={resetToCamera} onManualSearch={() => router.push('/collection')} />
           </div>
           <div className="absolute inset-0 z-30">
             <SeriesDetectionModal

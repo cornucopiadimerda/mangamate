@@ -15,7 +15,6 @@ export function VolumeShelf({ series }: { series: CollectionSeries }) {
   const [shopTarget, setShopTarget] = useState<ShopTarget | null>(null)
   const [volumeCovers, setVolumeCovers] = useState<Record<number, string>>({})
 
-  // ONE request per series — MangaDex returns all volume covers at once
   useEffect(() => {
     fetch(`/api/manga-covers?title=${encodeURIComponent(series.title)}`)
       .then(r => r.json())
@@ -51,9 +50,9 @@ export function VolumeShelf({ series }: { series: CollectionSeries }) {
     <div className="relative">
       {toast && (
         <div className="absolute animate-fade-in"
-          style={{ top: -48, left: 16, right: 16, zIndex: 10, background: '#1C1C1E', border: '1px solid #2C2C2E', borderRadius: 12, padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          style={{ top: -48, left: 16, right: 16, zIndex: 10, background: '#141416', border: '1px solid #1E1E22', borderRadius: 12, padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontSize: 13, fontWeight: 600, color: '#FFFFFF' }}>{toast}</span>
-          <button onClick={() => setToast(null)}><X size={14} color="#8E8E93" /></button>
+          <button onClick={() => setToast(null)}><X size={14} color="#8A8A8E" /></button>
         </div>
       )}
 
@@ -95,15 +94,15 @@ export function VolumeShelf({ series }: { series: CollectionSeries }) {
 
       <div className="flex items-center gap-4 px-4 mt-3 flex-wrap">
         <div className="flex items-center gap-1.5">
-          <div style={{ width: 10, height: 10, borderRadius: 2, background: '#3A3A3C', border: '1px solid #555' }} />
-          <span style={{ fontSize: 11, color: '#8E8E93' }}>Posseduto</span>
+          <div style={{ width: 10, height: 10, borderRadius: 2, background: '#282830', border: '1px solid #3C3C44' }} />
+          <span style={{ fontSize: 11, color: '#8A8A8E' }}>Posseduto</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div style={{ width: 10, height: 10, borderRadius: 2, background: '#1C1C1E', border: '1.5px dashed #3A3A3C' }} />
-          <span style={{ fontSize: 11, color: '#8E8E93' }}>Tap = wishlist</span>
+          <div style={{ width: 10, height: 10, borderRadius: 2, background: '#141416', border: '1.5px dashed #282830' }} />
+          <span style={{ fontSize: 11, color: '#8A8A8E' }}>Tap = wishlist</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span style={{ fontSize: 11, color: '#8E8E93' }}>🛒 = acquista</span>
+          <span style={{ fontSize: 11, color: '#8A8A8E' }}>🛒 = acquista</span>
         </div>
       </div>
 

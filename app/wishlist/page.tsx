@@ -37,7 +37,7 @@ export default function WishlistPage() {
   }
 
   return (
-    <div style={{ background: '#080808', minHeight: '100dvh' }}>
+    <div style={{ background: '#080808', minHeight: '100dvh', paddingBottom: 'calc(env(safe-area-inset-bottom) + 80px)' }}>
       {/* Header */}
       <div className="px-5 pt-14 pb-4 flex items-center justify-between">
         <div>

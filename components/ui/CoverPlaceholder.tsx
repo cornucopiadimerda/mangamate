@@ -1,4 +1,4 @@
-import { Heart } from 'lucide-react'
+import { Heart, ShoppingCart } from 'lucide-react'
 import { SERIES_COLORS } from '@/lib/data/mock'
 
 interface CoverPlaceholderProps {
@@ -52,38 +52,64 @@ export function CoverPlaceholder({ seriesId, title, volume, width = 80, height =
   )
 }
 
-export function MissingVolumePlaceholder({ volume, onPress, width = 80, height = 120, inWishlist = false }: {
+export function MissingVolumePlaceholder({ volume, onPress, onAmazon, width = 80, height = 120, inWishlist = false }: {
   volume: number
   onPress?: () => void
+  onAmazon?: () => void
   width?: number
   height?: number
   inWishlist?: boolean
 }) {
   return (
-    <button
-      onClick={onPress}
-      className="tap-scale"
-      style={{
-        width,
-        height,
-        minWidth: width,
-        background: inWishlist ? 'rgba(255,59,48,0.08)' : '#1C1C1E',
-        border: inWishlist ? '1.5px solid rgba(255,59,48,0.4)' : '1.5px dashed #3A3A3C',
-        borderRadius: 6,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 4,
-        cursor: 'pointer',
-      }}
-    >
-      {inWishlist ? (
-        <Heart size={16} color="#FF3B30" fill="#FF3B30" />
-      ) : (
-        <span style={{ fontSize: 18, color: '#3A3A3C' }}>+</span>
+    <div style={{ position: 'relative', width, height }}>
+      <button
+        onClick={onPress}
+        className="tap-scale"
+        style={{
+          width,
+          height,
+          minWidth: width,
+          background: inWishlist ? 'rgba(255,59,48,0.08)' : '#1C1C1E',
+          border: inWishlist ? '1.5px solid rgba(255,59,48,0.4)' : '1.5px dashed #3A3A3C',
+          borderRadius: 6,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 4,
+          cursor: 'pointer',
+        }}
+      >
+        {inWishlist ? (
+          <Heart size={16} color="#FF3B30" fill="#FF3B30" />
+        ) : (
+          <span style={{ fontSize: 18, color: '#3A3A3C' }}>+</span>
+        )}
+        <span style={{ fontSize: 10, fontWeight: 600, color: inWishlist ? '#FF3B30' : '#48484A' }}>{volume}</span>
+      </button>
+
+      {/* Amazon button — small icon in bottom-right corner */}
+      {onAmazon && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onAmazon() }}
+          style={{
+            position: 'absolute',
+            bottom: 3,
+            right: 3,
+            width: 20,
+            height: 20,
+            background: 'rgba(255,153,0,0.9)',
+            borderRadius: 4,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1,
+          }}
+          title="Cerca su Amazon"
+        >
+          <ShoppingCart size={11} color="#000" />
+        </button>
       )}
-      <span style={{ fontSize: 10, fontWeight: 600, color: inWishlist ? '#FF3B30' : '#48484A' }}>{volume}</span>
-    </button>
+    </div>
   )
 }

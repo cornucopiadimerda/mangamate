@@ -137,8 +137,11 @@ export const useCollectionStore = create<CollectionState>()(
         return get().getAllSeries().reduce((sum, s) => sum + s.missingVolumes.length, 0)
       },
       getEstimatedValue: () => {
-        // Average Italian manga price ~€8
-        return get().collection.length * 8
+        const { collection } = get()
+        return collection.reduce((sum, entry) => {
+          const series = MOCK_SERIES.find(s => s.id === entry.seriesId)
+          return sum + (series?.pricePerVolume ?? 6.5)
+        }, 0)
       },
     }),
     { name: 'mangamate-collection' }

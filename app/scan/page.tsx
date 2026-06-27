@@ -6,10 +6,10 @@ import { useRouter } from 'next/navigation'
 import { ConfirmationCard } from '@/components/scanner/ConfirmationCard'
 import { SeriesDetectionModal } from '@/components/scanner/SeriesDetectionModal'
 import { useCollectionStore } from '@/lib/store/collection'
-import { MOCK_SCAN_RESULT, MOCK_SERIES } from '@/lib/data/mock'
+import { MOCK_SERIES } from '@/lib/data/mock'
 import { RecognitionResult, CollectionEntry } from '@/lib/types/manga.types'
 
-type ScanState = 'camera' | 'analyzing' | 'confirming' | 'series-detection' | 'success'
+type ScanState = 'camera' | 'analyzing' | 'confirming' | 'series-detection' | 'success' | 'error'
 
 const SCAN_MESSAGES = [
   'Analizzando la copertina...',
@@ -27,6 +27,7 @@ export default function ScanPage() {
   const [cameraPermission, setCameraPermission] = useState<'pending' | 'granted' | 'denied'>('pending')
   const [loadingMessage, setLoadingMessage] = useState(SCAN_MESSAGES[0])
   const [loadingProgress, setLoadingProgress] = useState(0)
+  const [scanError, setScanError] = useState<string | null>(null)
   const { addVolume, addVolumes } = useCollectionStore()
 
   const startCamera = useCallback(async () => {
@@ -91,23 +92,27 @@ export default function ScanPage() {
         body: JSON.stringify({ imageBase64 }),
       })
 
+      const data = await res.json()
+
       if (!res.ok) {
-        throw new Error(`API error ${res.status}`)
+        const isKeyError = data.apiKeyInvalid || res.status === 403 || res.status === 400
+        setScanError(
+          isKeyError
+            ? 'Chiave API Gemini non valida.\nVai su aistudio.google.com/app/apikey per generarne una nuova (inizia con "AIza").'
+            : `Errore server ${res.status}: ${data.error ?? 'Risposta non valida'}`
+        )
+        setScanState('error')
+        return
       }
 
-      const result: RecognitionResult = await res.json()
       setLoadingProgress(100)
       await new Promise(r => setTimeout(r, 300))
-      setRecognitionResult(result)
+      setRecognitionResult(data as RecognitionResult)
       setScanState('confirming')
     } catch (err) {
-      console.error('Scan failed, using mock:', err)
-      // Graceful fallback to mock result
-      await new Promise(r => setTimeout(r, 500))
-      setLoadingProgress(100)
-      await new Promise(r => setTimeout(r, 300))
-      setRecognitionResult(MOCK_SCAN_RESULT)
-      setScanState('confirming')
+      console.error('Scan failed:', err)
+      setScanError('Errore di rete. Controlla la connessione e riprova.')
+      setScanState('error')
     }
   }
 
@@ -164,6 +169,7 @@ export default function ScanPage() {
     setScanState('camera')
     setRecognitionResult(null)
     setLoadingProgress(0)
+    setScanError(null)
   }
 
   return (
@@ -285,6 +291,25 @@ export default function ScanPage() {
               onManualSearch={() => router.push('/collection')}
             />
           </div>
+        </div>
+      )}
+
+      {/* Error state */}
+      {scanState === 'error' && (
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center px-8 text-center"
+          style={{ background: '#080808' }}>
+          <div className="flex items-center justify-center rounded-full mb-6"
+            style={{ width: 80, height: 80, background: 'rgba(255,59,48,0.15)', border: '2px solid rgba(255,59,48,0.3)' }}>
+            <span style={{ fontSize: 36 }}>⚠️</span>
+          </div>
+          <h2 style={{ fontSize: 20, fontWeight: 800, color: '#FFFFFF', marginBottom: 12 }}>Scansione non riuscita</h2>
+          <p style={{ fontSize: 14, color: '#8E8E93', lineHeight: 1.7, whiteSpace: 'pre-line', marginBottom: 32 }}>
+            {scanError}
+          </p>
+          <button onClick={resetToCamera} className="tap-scale w-full rounded-2xl"
+            style={{ height: 52, background: '#FF3B30', fontSize: 15, fontWeight: 700, color: '#FFFFFF', maxWidth: 280 }}>
+            Riprova
+          </button>
         </div>
       )}
 

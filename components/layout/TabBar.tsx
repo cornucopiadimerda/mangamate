@@ -38,13 +38,14 @@ export function TabBar() {
                 <div
                   className="flex items-center justify-center rounded-full"
                   style={{
-                    width: 52,
-                    height: 36,
-                    background: isActive ? '#FF3B30' : '#2C2C2E',
-                    transition: 'background 0.2s ease',
+                    width: 62,
+                    height: 42,
+                    background: '#FF3B30',
+                    boxShadow: '0 2px 12px rgba(255,59,48,0.45)',
+                    transition: 'transform 0.15s ease',
                   }}
                 >
-                  <Icon size={22} color={isActive ? '#FFFFFF' : '#8E8E93'} strokeWidth={isActive ? 2.2 : 1.8} />
+                  <Icon size={24} color="#FFFFFF" strokeWidth={2.2} />
                 </div>
               </Link>
             )

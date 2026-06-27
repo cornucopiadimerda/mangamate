@@ -1,9 +1,31 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useCollectionStore } from '@/lib/store/collection'
 import { Heart, BookOpen, CheckCircle, Clock, TrendingUp, Share2, Edit3 } from 'lucide-react'
 import { MOCK_SERIES } from '@/lib/data/mock'
+
+function useCountUp(target: number, duration = 1200) {
+  const [value, setValue] = useState(0)
+  const frameRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    if (target === 0) return
+    const start = performance.now()
+    const step = (now: number) => {
+      const elapsed = now - start
+      const progress = Math.min(elapsed / duration, 1)
+      // ease out cubic
+      const eased = 1 - Math.pow(1 - progress, 3)
+      setValue(eased * target)
+      if (progress < 1) frameRef.current = requestAnimationFrame(step)
+    }
+    frameRef.current = requestAnimationFrame(step)
+    return () => { if (frameRef.current) cancelAnimationFrame(frameRef.current) }
+  }, [target, duration])
+
+  return value
+}
 
 export default function ProfilePage() {
   const {
@@ -22,13 +44,15 @@ export default function ProfilePage() {
   const totalMissing = getTotalMissing()
   const estimatedValue = getEstimatedValue()
 
+  const animatedValue = useCountUp(estimatedValue, 1400)
+
   const saveName = () => {
     updateProfile({ tagname: tempName })
     setEditingName(false)
   }
 
   const shareStats = async () => {
-    const text = `🎌 La mia collezione manga su MangaMate\n\n📚 ${totalVolumes} volumi · ${getTotalSeries()} serie\n✅ ${completedSeries.length} complete · ⏳ ${inProgressSeries.length} in corso\n💰 Valore stimato: €${estimatedValue}\n\nScarica MangaMate → mangamate.vercel.app`
+    const text = `🎌 La mia collezione manga su MangaMate\n\n📚 ${totalVolumes} volumi · ${getTotalSeries()} serie\n✅ ${completedSeries.length} complete · ⏳ ${inProgressSeries.length} in corso\n💰 Valore stimato: €${estimatedValue.toFixed(2)}\n\nScarica MangaMate → mangamate.vercel.app`
     if (navigator.share) {
       await navigator.share({ text })
     } else {
@@ -38,7 +62,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div style={{ background: '#080808', minHeight: '100dvh' }}>
+    <div style={{ background: '#080808', minHeight: '100dvh', paddingBottom: 'calc(env(safe-area-inset-bottom) + 80px)' }}>
       {/* Header */}
       <div className="px-5 pt-14 pb-6">
         <div className="flex items-start justify-between">
@@ -83,6 +107,29 @@ export default function ProfilePage() {
         </div>
       </div>
 
+      {/* Patrimonio animated box */}
+      <div className="px-5 pb-5">
+        <div
+          className="relative overflow-hidden rounded-2xl p-5"
+          style={{ background: 'linear-gradient(135deg, #1a1200, #2d1f00)', border: '1px solid rgba(255,214,10,0.25)' }}
+        >
+          <div style={{ position: 'absolute', right: -20, top: -20, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,214,10,0.05)' }} />
+          <div style={{ position: 'absolute', right: 20, bottom: -30, width: 80, height: 80, borderRadius: '50%', background: 'rgba(255,214,10,0.04)' }} />
+          <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,214,10,0.6)', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 }}>
+            Valore collezione
+          </p>
+          <div className="flex items-baseline gap-1">
+            <span style={{ fontSize: 13, fontWeight: 700, color: '#FFD60A', marginBottom: 2 }}>€</span>
+            <span style={{ fontSize: 44, fontWeight: 900, color: '#FFD60A', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+              {animatedValue.toFixed(2)}
+            </span>
+          </div>
+          <p style={{ fontSize: 11, color: 'rgba(255,214,10,0.4)', marginTop: 6 }}>
+            {totalVolumes} vol · prezzi originali uscita mercato IT
+          </p>
+        </div>
+      </div>
+
       {/* Stats grid */}
       <div className="px-5 pb-5">
         <h2 style={{ fontSize: 11, fontWeight: 700, color: '#8E8E93', marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 }}>
@@ -93,12 +140,9 @@ export default function ProfilePage() {
           <StatBlock icon={<TrendingUp size={18} color="#FF9F0A" />} value={getTotalSeries()} label="Serie" color="#FF9F0A" />
           <StatBlock icon={<CheckCircle size={18} color="#30D158" />} value={completedSeries.length} label="Serie complete" color="#30D158" />
           <StatBlock icon={<Clock size={18} color="#64D2FF" />} value={inProgressSeries.length} label="In corso" color="#64D2FF" />
-          <StatBlock icon={<span style={{ fontSize: 18 }}>📦</span>} value={totalMissing} label="Volumi mancanti" color="#8E8E93" />
-          <StatBlock icon={<span style={{ fontSize: 18 }}>💰</span>} value={`€${estimatedValue}`} label="Valore stimato*" color="#FFD60A" />
+          <StatBlock icon={<span style={{ fontSize: 18 }}>📦</span>} value={totalMissing} label="Mancanti" color="#8E8E93" />
+          <StatBlock icon={<span style={{ fontSize: 18 }}>📊</span>} value={`${allSeries.length > 0 ? Math.round(allSeries.reduce((s, x) => s + x.completionPercent, 0) / allSeries.length) : 0}%`} label="Completamento" color="#BF5AF2" />
         </div>
-        <p style={{ fontSize: 10, color: '#3A3A3C', marginTop: 8 }}>
-          *Stima basata su €8 per volume (prezzo medio mercato italiano)
-        </p>
       </div>
 
       {/* Favorite series */}

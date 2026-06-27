@@ -11,6 +11,7 @@ export interface Series {
   description: string
   publisher: string
   language: string
+  pricePerVolume?: number
 }
 
 export interface Volume {

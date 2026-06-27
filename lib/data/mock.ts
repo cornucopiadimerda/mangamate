@@ -13,6 +13,7 @@ export const MOCK_SERIES: Series[] = [
     description: 'Guts, il Guerriero Nero, intraprende un viaggio di vendetta contro il suo ex amico Griffith nel mondo oscuro di Midland.',
     publisher: 'Panini Comics',
     language: 'it',
+    pricePerVolume: 5.5,
   },
   {
     id: 'one-piece',
@@ -26,6 +27,7 @@ export const MOCK_SERIES: Series[] = [
     description: 'Monkey D. Luffy sogna di diventare il Re dei Pirati e trovare il leggendario tesoro chiamato "One Piece".',
     publisher: 'Star Comics',
     language: 'it',
+    pricePerVolume: 5.2,
   },
   {
     id: 'demon-slayer',
@@ -39,6 +41,7 @@ export const MOCK_SERIES: Series[] = [
     description: 'Tanjiro Kamado diventa un cacciatore di demoni per salvare sua sorella Nezuko, trasformata in un demone.',
     publisher: 'Star Comics',
     language: 'it',
+    pricePerVolume: 5.9,
   },
   {
     id: 'attack-on-titan',
@@ -52,6 +55,7 @@ export const MOCK_SERIES: Series[] = [
     description: "L'umanità sopravvive dentro enormi mura per proteggersi dai Titani, creature gigantesche che divorano gli esseri umani.",
     publisher: 'Planet Manga',
     language: 'it',
+    pricePerVolume: 6.9,
   },
 ]
 

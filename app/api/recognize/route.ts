@@ -39,10 +39,7 @@ export async function POST(req: NextRequest) {
               { inline_data: { mime_type: 'image/jpeg', data: base64Data } },
             ],
           }],
-          generationConfig: {
-            temperature: 0.1,
-            responseMimeType: 'application/json',
-          },
+          generationConfig: { temperature: 0.1 },
         }),
       }
     )
@@ -51,7 +48,7 @@ export async function POST(req: NextRequest) {
       const errorText = await res.text()
       console.error('Gemini API error:', res.status, errorText)
       return NextResponse.json(
-        { error: `Gemini error ${res.status}`, detail: errorText },
+        { error: `Gemini error ${res.status}`, detail: errorText, apiKeyInvalid: res.status === 400 || res.status === 403 },
         { status: 502 }
       )
     }
@@ -63,7 +60,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Empty response from Gemini' }, { status: 502 })
     }
 
-    const result = JSON.parse(rawText)
+    // Extract JSON — Gemini sometimes wraps it in ```json ... ``` blocks
+    const jsonMatch = rawText.match(/```json\s*([\s\S]*?)```/) || rawText.match(/(\{[\s\S]*\})/)
+    const jsonStr = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : rawText
+    const result = JSON.parse(jsonStr.trim())
 
     // Fetch cover from Open Library by ISBN (no auth needed)
     let coverUrl: string | null = null

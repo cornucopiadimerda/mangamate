@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { Camera, TrendingUp, BookOpen, Heart, ChevronRight, Zap } from 'lucide-react'
 import { useCollectionStore } from '@/lib/store/collection'
 import { CoverPlaceholder } from '@/components/ui/CoverPlaceholder'
+import Image from 'next/image'
 
 export default function HomePage() {
   const { getTotalVolumes, getTotalSeries, getCompletionRate, getAllSeries, wishlist } = useCollectionStore()
@@ -89,12 +90,25 @@ export default function HomePage() {
                   className="flex items-center gap-4 p-4 rounded-2xl"
                   style={{ background: '#1C1C1E', border: '1px solid #2C2C2E' }}
                 >
-                  <CoverPlaceholder
-                    seriesId={series.id}
-                    title={series.title}
-                    width={48}
-                    height={68}
-                  />
+                  {series.coverUrl ? (
+                    <div style={{ width: 48, height: 68, borderRadius: 6, overflow: 'hidden', flexShrink: 0, position: 'relative' }}>
+                      <Image
+                        src={series.coverUrl}
+                        alt={series.title}
+                        fill
+                        style={{ objectFit: 'cover' }}
+                        sizes="48px"
+                        onError={() => {}}
+                      />
+                    </div>
+                  ) : (
+                    <CoverPlaceholder
+                      seriesId={series.id}
+                      title={series.title}
+                      width={48}
+                      height={68}
+                    />
+                  )}
                   <div className="flex-1 min-w-0">
                     <p style={{ fontSize: 15, fontWeight: 700, color: '#FFFFFF' }}>{series.title}</p>
                     <p style={{ fontSize: 12, color: '#8E8E93', marginTop: 2 }}>{series.publisher}</p>

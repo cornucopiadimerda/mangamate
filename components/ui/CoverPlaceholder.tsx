@@ -1,3 +1,4 @@
+import { Heart } from 'lucide-react'
 import { SERIES_COLORS } from '@/lib/data/mock'
 
 interface CoverPlaceholderProps {
@@ -26,19 +27,7 @@ export function CoverPlaceholder({ seriesId, title, volume, width = 80, height =
         padding: 6,
       }}
     >
-      {/* Spine line */}
-      <div
-        style={{
-          position: 'absolute',
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: 3,
-          background: colors.text,
-          opacity: 0.6,
-        }}
-      />
-      {/* Initial letter */}
+      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: colors.text, opacity: 0.6 }} />
       <span
         style={{
           fontSize: Math.round(numericHeight * 0.38),
@@ -54,32 +43,21 @@ export function CoverPlaceholder({ seriesId, title, volume, width = 80, height =
       >
         {initial}
       </span>
-      {/* Volume number badge */}
       {volume !== undefined && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 5,
-            right: 5,
-            background: 'rgba(0,0,0,0.6)',
-            borderRadius: 4,
-            padding: '1px 5px',
-          }}
-        >
-          <span style={{ fontSize: 10, fontWeight: 700, color: '#FFFFFF' }}>
-            {volume}
-          </span>
+        <div style={{ position: 'absolute', bottom: 5, right: 5, background: 'rgba(0,0,0,0.6)', borderRadius: 4, padding: '1px 5px' }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: '#FFFFFF' }}>{volume}</span>
         </div>
       )}
     </div>
   )
 }
 
-export function MissingVolumePlaceholder({ volume, onPress, width = 80, height = 120 }: {
+export function MissingVolumePlaceholder({ volume, onPress, width = 80, height = 120, inWishlist = false }: {
   volume: number
   onPress?: () => void
   width?: number
   height?: number
+  inWishlist?: boolean
 }) {
   return (
     <button
@@ -89,8 +67,8 @@ export function MissingVolumePlaceholder({ volume, onPress, width = 80, height =
         width,
         height,
         minWidth: width,
-        background: '#1C1C1E',
-        border: '1.5px dashed #3A3A3C',
+        background: inWishlist ? 'rgba(255,59,48,0.08)' : '#1C1C1E',
+        border: inWishlist ? '1.5px solid rgba(255,59,48,0.4)' : '1.5px dashed #3A3A3C',
         borderRadius: 6,
         display: 'flex',
         flexDirection: 'column',
@@ -100,8 +78,12 @@ export function MissingVolumePlaceholder({ volume, onPress, width = 80, height =
         cursor: 'pointer',
       }}
     >
-      <span style={{ fontSize: 18, color: '#3A3A3C' }}>+</span>
-      <span style={{ fontSize: 10, fontWeight: 600, color: '#48484A' }}>{volume}</span>
+      {inWishlist ? (
+        <Heart size={16} color="#FF3B30" fill="#FF3B30" />
+      ) : (
+        <span style={{ fontSize: 18, color: '#3A3A3C' }}>+</span>
+      )}
+      <span style={{ fontSize: 10, fontWeight: 600, color: inWishlist ? '#FF3B30' : '#48484A' }}>{volume}</span>
     </button>
   )
 }

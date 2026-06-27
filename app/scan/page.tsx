@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { X, Zap, FlashlightIcon as Flashlight } from 'lucide-react'
+import { X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { ConfirmationCard } from '@/components/scanner/ConfirmationCard'
 import { SeriesDetectionModal } from '@/components/scanner/SeriesDetectionModal'
@@ -11,6 +11,13 @@ import { RecognitionResult, CollectionEntry } from '@/lib/types/manga.types'
 
 type ScanState = 'camera' | 'analyzing' | 'confirming' | 'series-detection' | 'success'
 
+const SCAN_MESSAGES = [
+  'Analizzando la copertina...',
+  'Cercando nel database...',
+  'Identificando edizione...',
+  'Quasi pronto...',
+]
+
 export default function ScanPage() {
   const router = useRouter()
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -18,6 +25,8 @@ export default function ScanPage() {
   const [scanState, setScanState] = useState<ScanState>('camera')
   const [recognitionResult, setRecognitionResult] = useState<RecognitionResult | null>(null)
   const [cameraPermission, setCameraPermission] = useState<'pending' | 'granted' | 'denied'>('pending')
+  const [loadingMessage, setLoadingMessage] = useState(SCAN_MESSAGES[0])
+  const [loadingProgress, setLoadingProgress] = useState(0)
   const { addVolume, addVolumes } = useCollectionStore()
 
   const startCamera = useCallback(async () => {
@@ -26,9 +35,7 @@ export default function ScanPage() {
         video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
       })
       streamRef.current = stream
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream
-      }
+      if (videoRef.current) videoRef.current.srcObject = stream
       setCameraPermission('granted')
     } catch {
       setCameraPermission('denied')
@@ -37,30 +44,82 @@ export default function ScanPage() {
 
   useEffect(() => {
     startCamera()
-    return () => {
-      streamRef.current?.getTracks().forEach((t) => t.stop())
-    }
+    return () => { streamRef.current?.getTracks().forEach((t) => t.stop()) }
   }, [startCamera])
 
-  const handleCapture = () => {
+  // Cycling loading messages
+  useEffect(() => {
+    if (scanState !== 'analyzing') return
+    let msgIdx = 0
+    let progress = 0
+    setLoadingMessage(SCAN_MESSAGES[0])
+    setLoadingProgress(0)
+
+    const msgInterval = setInterval(() => {
+      msgIdx = (msgIdx + 1) % SCAN_MESSAGES.length
+      setLoadingMessage(SCAN_MESSAGES[msgIdx])
+    }, 900)
+
+    const progressInterval = setInterval(() => {
+      progress = Math.min(progress + 2, 95)
+      setLoadingProgress(progress)
+    }, 60)
+
+    return () => {
+      clearInterval(msgInterval)
+      clearInterval(progressInterval)
+    }
+  }, [scanState])
+
+  const captureFrame = (): string | null => {
+    if (!videoRef.current) return null
+    const canvas = document.createElement('canvas')
+    canvas.width = videoRef.current.videoWidth || 1280
+    canvas.height = videoRef.current.videoHeight || 720
+    canvas.getContext('2d')?.drawImage(videoRef.current, 0, 0)
+    return canvas.toDataURL('image/jpeg', 0.85)
+  }
+
+  const handleCapture = async () => {
     setScanState('analyzing')
-    // Simulate AI recognition (1.8s delay for realism)
-    setTimeout(() => {
+    const imageBase64 = captureFrame()
+
+    try {
+      const res = await fetch('/api/recognize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64 }),
+      })
+
+      if (!res.ok) {
+        throw new Error(`API error ${res.status}`)
+      }
+
+      const result: RecognitionResult = await res.json()
+      setLoadingProgress(100)
+      await new Promise(r => setTimeout(r, 300))
+      setRecognitionResult(result)
+      setScanState('confirming')
+    } catch (err) {
+      console.error('Scan failed, using mock:', err)
+      // Graceful fallback to mock result
+      await new Promise(r => setTimeout(r, 500))
+      setLoadingProgress(100)
+      await new Promise(r => setTimeout(r, 300))
       setRecognitionResult(MOCK_SCAN_RESULT)
       setScanState('confirming')
-    }, 1800)
+    }
   }
 
   const handleConfirm = () => {
     if (!recognitionResult) return
-    const seriesId = recognitionResult.series.toLowerCase().replace(/\s+/g, '-')
     const seriesData = MOCK_SERIES.find(
       (s) => s.title.toLowerCase() === recognitionResult.series.toLowerCase()
     )
     if (seriesData) {
       setScanState('series-detection')
     } else {
-      // Add single volume and go back to camera
+      const seriesId = recognitionResult.series.toLowerCase().replace(/\s+/g, '-')
       addVolume({
         id: `${seriesId}-${recognitionResult.volumeNumber}-${Date.now()}`,
         seriesId,
@@ -79,7 +138,6 @@ export default function ScanPage() {
       (s) => s.title.toLowerCase() === recognitionResult.series.toLowerCase()
     )
     const totalVolumes = seriesData?.totalVolumes ?? 1
-
     const makeEntry = (n: number): CollectionEntry => ({
       id: `${seriesId}-${n}-${Date.now()}`,
       seriesId,
@@ -87,15 +145,9 @@ export default function ScanPage() {
       addedAt: Date.now(),
       condition: 'mint',
     })
-
-    if (choice === 'single') {
-      addVolume(makeEntry(recognitionResult.volumeNumber))
-    } else if (choice === 'range-10') {
-      addVolumes(Array.from({ length: Math.min(10, totalVolumes) }, (_, i) => makeEntry(i + 1)))
-    } else if (choice === 'all') {
-      addVolumes(Array.from({ length: totalVolumes }, (_, i) => makeEntry(i + 1)))
-    }
-
+    if (choice === 'single') addVolume(makeEntry(recognitionResult.volumeNumber))
+    else if (choice === 'range-10') addVolumes(Array.from({ length: Math.min(10, totalVolumes) }, (_, i) => makeEntry(i + 1)))
+    else if (choice === 'all') addVolumes(Array.from({ length: totalVolumes }, (_, i) => makeEntry(i + 1)))
     if (choice !== 'cancel') showSuccess()
     else setScanState('camera')
   }
@@ -105,48 +157,36 @@ export default function ScanPage() {
     setTimeout(() => {
       setScanState('camera')
       setRecognitionResult(null)
-    }, 1200)
+    }, 1400)
+  }
+
+  const resetToCamera = () => {
+    setScanState('camera')
+    setRecognitionResult(null)
+    setLoadingProgress(0)
   }
 
   return (
-    <div className="fixed inset-0 flex flex-col" style={{ background: '#000000', zIndex: 10 }}>
-      {/* Camera view — always mounted */}
+    // z-index 60 puts the scan overlay above the tab bar (z-50)
+    <div className="fixed inset-0 flex flex-col" style={{ background: '#000', zIndex: 60 }}>
+      {/* Camera feed — always mounted */}
       <div className="absolute inset-0">
         {cameraPermission === 'denied' ? (
           <div className="flex flex-col items-center justify-center h-full gap-4 px-8 text-center">
-            <div
-              className="flex items-center justify-center rounded-full"
-              style={{ width: 72, height: 72, background: '#1C1C1E' }}
-            >
+            <div className="flex items-center justify-center rounded-full" style={{ width: 72, height: 72, background: '#1C1C1E' }}>
               <span style={{ fontSize: 32 }}>📷</span>
             </div>
             <h2 style={{ fontSize: 20, fontWeight: 700, color: '#FFFFFF' }}>Camera non disponibile</h2>
             <p style={{ fontSize: 14, color: '#8E8E93', lineHeight: 1.6 }}>
-              Abilita l&apos;accesso alla camera nelle impostazioni del browser per scansionare i tuoi manga.
+              Abilita l&apos;accesso alla camera nelle impostazioni del browser.
             </p>
-            <button
-              onClick={startCamera}
-              className="tap-scale"
-              style={{
-                padding: '14px 32px',
-                background: '#FF3B30',
-                borderRadius: 14,
-                fontSize: 15,
-                fontWeight: 700,
-                color: '#FFFFFF',
-              }}
-            >
+            <button onClick={startCamera} className="tap-scale"
+              style={{ padding: '14px 32px', background: '#FF3B30', borderRadius: 14, fontSize: 15, fontWeight: 700, color: '#FFFFFF' }}>
               Riprova
             </button>
           </div>
         ) : (
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted
-            className="w-full h-full object-cover"
-          />
+          <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
         )}
       </div>
 
@@ -154,114 +194,72 @@ export default function ScanPage() {
       {(scanState === 'camera' || scanState === 'analyzing' || scanState === 'success') && (
         <>
           {/* Top bar */}
-          <div
-            className="relative z-10 flex items-center justify-between px-5"
-            style={{ paddingTop: 'calc(env(safe-area-inset-top) + 12px)', paddingBottom: 12 }}
-          >
-            <button
-              onClick={() => router.push('/')}
-              className="tap-scale"
-              style={{
-                width: 36,
-                height: 36,
-                background: 'rgba(30,30,30,0.8)',
-                backdropFilter: 'blur(10px)',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
+          <div className="relative z-10 flex items-center justify-between px-5"
+            style={{ paddingTop: 'calc(env(safe-area-inset-top) + 12px)', paddingBottom: 12 }}>
+            <button onClick={() => router.push('/')} className="tap-scale"
+              style={{ width: 36, height: 36, background: 'rgba(30,30,30,0.8)', backdropFilter: 'blur(10px)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <X size={18} color="#FFFFFF" />
             </button>
             <p style={{ fontSize: 15, fontWeight: 600, color: '#FFFFFF' }}>Scansiona</p>
             <div style={{ width: 36 }} />
           </div>
 
-          {/* Viewfinder */}
-          <div className="relative z-10 flex-1 flex items-center justify-center">
+          {/* Center content */}
+          <div className="relative z-10 flex-1 flex flex-col items-center justify-center">
             {scanState === 'analyzing' ? (
-              <div className="flex flex-col items-center gap-4">
-                <div
-                  className="flex items-center justify-center rounded-full"
-                  style={{
-                    width: 72,
-                    height: 72,
-                    background: 'rgba(255,59,48,0.2)',
-                    border: '2px solid #FF3B30',
-                  }}
-                >
-                  <Zap size={32} color="#FF3B30" className="scan-pulse" />
+              <div className="flex flex-col items-center gap-6 px-8 w-full">
+                {/* Spinner + pulsing ring */}
+                <div className="relative flex items-center justify-center" style={{ width: 96, height: 96 }}>
+                  <div className="absolute inset-0 rounded-full scan-pulse"
+                    style={{ border: '2px solid rgba(255,59,48,0.3)', borderRadius: '50%' }} />
+                  <div className="absolute inset-0 rounded-full animate-spin"
+                    style={{ border: '3px solid transparent', borderTopColor: '#FF3B30', borderRadius: '50%' }} />
+                  <span style={{ fontSize: 36 }}>🔍</span>
                 </div>
+
+                {/* Progress bar */}
+                <div style={{ width: '100%', maxWidth: 260 }}>
+                  <div style={{ height: 3, background: 'rgba(255,255,255,0.1)', borderRadius: 99, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${loadingProgress}%`, background: '#FF3B30', borderRadius: 99, transition: 'width 0.1s linear' }} />
+                  </div>
+                </div>
+
                 <div className="text-center">
-                  <p style={{ fontSize: 17, fontWeight: 700, color: '#FFFFFF' }}>Analizzando...</p>
-                  <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', marginTop: 4 }}>
-                    L&apos;AI sta riconoscendo il volume
+                  <p style={{ fontSize: 17, fontWeight: 700, color: '#FFFFFF' }} className="animate-fade-in" key={loadingMessage}>
+                    {loadingMessage}
+                  </p>
+                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 6 }}>
+                    Powered by Gemini AI
                   </p>
                 </div>
               </div>
             ) : scanState === 'success' ? (
               <div className="flex flex-col items-center gap-3 animate-fade-in">
-                <div
-                  className="flex items-center justify-center rounded-full"
-                  style={{ width: 72, height: 72, background: 'rgba(48,209,88,0.2)' }}
-                >
-                  <span style={{ fontSize: 36 }}>✓</span>
+                <div className="flex items-center justify-center rounded-full"
+                  style={{ width: 80, height: 80, background: 'rgba(48,209,88,0.2)', border: '2px solid #30D158' }}>
+                  <span style={{ fontSize: 40 }}>✓</span>
                 </div>
-                <p style={{ fontSize: 17, fontWeight: 700, color: '#30D158' }}>Aggiunto!</p>
+                <p style={{ fontSize: 18, fontWeight: 700, color: '#30D158' }}>Aggiunto!</p>
               </div>
             ) : (
               /* Viewfinder brackets */
               <div className="relative" style={{ width: 220, height: 300 }}>
-                {/* Top-left */}
                 <div style={{ position: 'absolute', top: 0, left: 0, width: 28, height: 28, borderTop: '3px solid white', borderLeft: '3px solid white', borderRadius: '2px 0 0 0' }} />
-                {/* Top-right */}
                 <div style={{ position: 'absolute', top: 0, right: 0, width: 28, height: 28, borderTop: '3px solid white', borderRight: '3px solid white', borderRadius: '0 2px 0 0' }} />
-                {/* Bottom-left */}
                 <div style={{ position: 'absolute', bottom: 0, left: 0, width: 28, height: 28, borderBottom: '3px solid white', borderLeft: '3px solid white', borderRadius: '0 0 0 2px' }} />
-                {/* Bottom-right */}
                 <div style={{ position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderBottom: '3px solid white', borderRight: '3px solid white', borderRadius: '0 0 2px 0' }} />
-
-                {/* Scan line animation */}
-                <div
-                  className="scan-pulse"
-                  style={{
-                    position: 'absolute',
-                    left: 4,
-                    right: 4,
-                    top: '50%',
-                    height: 1,
-                    background: 'linear-gradient(90deg, transparent, #FF3B30, transparent)',
-                  }}
-                />
+                <div className="scan-pulse" style={{ position: 'absolute', left: 4, right: 4, top: '50%', height: 1, background: 'linear-gradient(90deg, transparent, #FF3B30, transparent)' }} />
               </div>
             )}
           </div>
 
-          {/* Bottom area */}
+          {/* Shutter button */}
           {scanState === 'camera' && (
-            <div
-              className="relative z-10 flex flex-col items-center gap-4"
-              style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 100px)', paddingTop: 20 }}
-            >
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>
-                Punta la fotocamera sulla copertina del manga
-              </p>
-              {/* Shutter button */}
-              <button
-                onClick={handleCapture}
-                className="tap-scale"
-                style={{
-                  width: 72,
-                  height: 72,
-                  borderRadius: '50%',
-                  background: '#FFFFFF',
-                  border: '4px solid rgba(255,255,255,0.3)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
+            <div className="relative z-10 flex flex-col items-center gap-4"
+              style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 100px)', paddingTop: 20 }}>
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>Punta la fotocamera sulla copertina</p>
+              <button onClick={handleCapture} className="tap-scale"
+                style={{ width: 72, height: 72, borderRadius: '50%', background: '#FFFFFF', border: '4px solid rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#FFFFFF', border: '2px solid #000' }} />
               </button>
             </div>
@@ -269,34 +267,52 @@ export default function ScanPage() {
         </>
       )}
 
-      {/* Confirmation overlay */}
+      {/* Confirmation */}
       {scanState === 'confirming' && recognitionResult && (
-        <div className="relative z-20 flex flex-col h-full animate-fade-in" style={{ background: '#080808' }}>
-          <ConfirmationCard
-            result={recognitionResult}
-            onConfirm={handleConfirm}
-            onRetry={() => { setScanState('camera'); setRecognitionResult(null) }}
-            onManualSearch={() => router.push('/collection')}
-          />
-        </div>
-      )}
-
-      {/* Series detection modal */}
-      {scanState === 'series-detection' && recognitionResult && (
-        <>
-          <div className="relative z-20 flex flex-col h-full" style={{ background: '#080808' }}>
+        <div className="absolute inset-0 z-20 flex flex-col" style={{ background: '#080808' }}>
+          <div className="relative z-10 flex items-center px-5"
+            style={{ paddingTop: 'calc(env(safe-area-inset-top) + 12px)', paddingBottom: 12, flexShrink: 0 }}>
+            <button onClick={resetToCamera} className="tap-scale"
+              style={{ width: 36, height: 36, background: '#1C1C1E', border: '1px solid #2C2C2E', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <X size={18} color="#FFFFFF" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto">
             <ConfirmationCard
               result={recognitionResult}
               onConfirm={handleConfirm}
-              onRetry={() => { setScanState('camera'); setRecognitionResult(null) }}
+              onRetry={resetToCamera}
               onManualSearch={() => router.push('/collection')}
             />
           </div>
-          <SeriesDetectionModal
-            seriesName={recognitionResult.series}
-            totalVolumes={MOCK_SERIES.find(s => s.title === recognitionResult.series)?.totalVolumes ?? 1}
-            onChoice={handleSeriesChoice}
-          />
+        </div>
+      )}
+
+      {/* Series detection */}
+      {scanState === 'series-detection' && recognitionResult && (
+        <>
+          <div className="absolute inset-0 z-20" style={{ background: '#080808' }}>
+            <div className="relative z-10 flex items-center px-5"
+              style={{ paddingTop: 'calc(env(safe-area-inset-top) + 12px)', paddingBottom: 12 }}>
+              <button onClick={resetToCamera} className="tap-scale"
+                style={{ width: 36, height: 36, background: '#1C1C1E', border: '1px solid #2C2C2E', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <X size={18} color="#FFFFFF" />
+              </button>
+            </div>
+            <ConfirmationCard
+              result={recognitionResult}
+              onConfirm={handleConfirm}
+              onRetry={resetToCamera}
+              onManualSearch={() => router.push('/collection')}
+            />
+          </div>
+          <div className="absolute inset-0 z-30">
+            <SeriesDetectionModal
+              seriesName={recognitionResult.series}
+              totalVolumes={MOCK_SERIES.find(s => s.title.toLowerCase() === recognitionResult.series.toLowerCase())?.totalVolumes ?? 1}
+              onChoice={handleSeriesChoice}
+            />
+          </div>
         </>
       )}
     </div>

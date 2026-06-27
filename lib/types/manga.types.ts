@@ -7,6 +7,7 @@ export interface Series {
   status: 'ongoing' | 'completed' | 'hiatus'
   totalVolumes: number | null
   coverUrl: string
+  malId?: number
   description: string
   publisher: string
   language: string
@@ -49,6 +50,7 @@ export interface RecognitionResult {
   publisher: string
   edition: string
   isbn?: string
+  author?: string
   confidence: number
   coverUrl?: string
 }
@@ -57,4 +59,11 @@ export interface CollectionSeries extends Series {
   ownedVolumes: number[]
   missingVolumes: number[]
   completionPercent: number
+}
+
+export interface UserProfile {
+  tagname: string
+  displayName: string
+  bio: string
+  avatarColor: string
 }

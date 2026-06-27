@@ -2,22 +2,30 @@
 
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { CollectionEntry, WishlistEntry, CollectionSeries } from '@/lib/types/manga.types'
+import { CollectionEntry, WishlistEntry, CollectionSeries, UserProfile } from '@/lib/types/manga.types'
 import { MOCK_SERIES, INITIAL_COLLECTION, INITIAL_WISHLIST } from '@/lib/data/mock'
 
 interface CollectionState {
   collection: CollectionEntry[]
   wishlist: WishlistEntry[]
+  favorites: string[]
+  profile: UserProfile
   addVolume: (entry: CollectionEntry) => void
   addVolumes: (entries: CollectionEntry[]) => void
   removeVolume: (id: string) => void
   addToWishlist: (entry: WishlistEntry) => void
   removeFromWishlist: (id: string) => void
+  isInWishlist: (seriesId: string, volumeNumber: number) => boolean
+  toggleFavorite: (seriesId: string) => void
+  isFavorite: (seriesId: string) => boolean
+  updateProfile: (profile: Partial<UserProfile>) => void
   getSeriesCollection: (seriesId: string) => CollectionSeries | null
   getAllSeries: () => CollectionSeries[]
   getTotalVolumes: () => number
   getTotalSeries: () => number
   getCompletionRate: () => number
+  getTotalMissing: () => number
+  getEstimatedValue: () => number
 }
 
 export const useCollectionStore = create<CollectionState>()(
@@ -25,6 +33,13 @@ export const useCollectionStore = create<CollectionState>()(
     (set, get) => ({
       collection: INITIAL_COLLECTION,
       wishlist: INITIAL_WISHLIST,
+      favorites: ['berserk', 'one-piece'],
+      profile: {
+        tagname: '@collezionista',
+        displayName: 'Alessandro',
+        bio: 'Collezionista di manga dal 2010 🎌',
+        avatarColor: '#FF3B30',
+      },
 
       addVolume: (entry) =>
         set((state) => ({
@@ -38,18 +53,15 @@ export const useCollectionStore = create<CollectionState>()(
       addVolumes: (entries) =>
         set((state) => {
           const newEntries = entries.filter(
-            (entry) =>
-              !state.collection.some(
-                (e) => e.seriesId === entry.seriesId && e.volumeNumber === entry.volumeNumber
-              )
+            (entry) => !state.collection.some(
+              (e) => e.seriesId === entry.seriesId && e.volumeNumber === entry.volumeNumber
+            )
           )
           return { collection: [...state.collection, ...newEntries] }
         }),
 
       removeVolume: (id) =>
-        set((state) => ({
-          collection: state.collection.filter((e) => e.id !== id),
-        })),
+        set((state) => ({ collection: state.collection.filter((e) => e.id !== id) })),
 
       addToWishlist: (entry) =>
         set((state) => ({
@@ -61,9 +73,22 @@ export const useCollectionStore = create<CollectionState>()(
         })),
 
       removeFromWishlist: (id) =>
+        set((state) => ({ wishlist: state.wishlist.filter((e) => e.id !== id) })),
+
+      isInWishlist: (seriesId, volumeNumber) =>
+        get().wishlist.some((e) => e.seriesId === seriesId && e.volumeNumber === volumeNumber),
+
+      toggleFavorite: (seriesId) =>
         set((state) => ({
-          wishlist: state.wishlist.filter((e) => e.id !== id),
+          favorites: state.favorites.includes(seriesId)
+            ? state.favorites.filter((id) => id !== seriesId)
+            : [...state.favorites, seriesId],
         })),
+
+      isFavorite: (seriesId) => get().favorites.includes(seriesId),
+
+      updateProfile: (partial) =>
+        set((state) => ({ profile: { ...state.profile, ...partial } })),
 
       getSeriesCollection: (seriesId) => {
         const series = MOCK_SERIES.find((s) => s.id === seriesId)
@@ -74,9 +99,7 @@ export const useCollectionStore = create<CollectionState>()(
           .map((e) => e.volumeNumber)
           .sort((a, b) => a - b)
         const total = series.totalVolumes ?? Math.max(...owned, 0)
-        const missing = Array.from({ length: total }, (_, i) => i + 1).filter(
-          (n) => !owned.includes(n)
-        )
+        const missing = Array.from({ length: total }, (_, i) => i + 1).filter((n) => !owned.includes(n))
         return {
           ...series,
           ownedVolumes: owned,
@@ -93,9 +116,7 @@ export const useCollectionStore = create<CollectionState>()(
             .map((e) => e.volumeNumber)
             .sort((a, b) => a - b)
           const total = series.totalVolumes ?? Math.max(...owned, 0)
-          const missing = Array.from({ length: total }, (_, i) => i + 1).filter(
-            (n) => !owned.includes(n)
-          )
+          const missing = Array.from({ length: total }, (_, i) => i + 1).filter((n) => !owned.includes(n))
           return {
             ...series,
             ownedVolumes: owned,
@@ -110,8 +131,14 @@ export const useCollectionStore = create<CollectionState>()(
       getCompletionRate: () => {
         const all = get().getAllSeries()
         if (!all.length) return 0
-        const avg = all.reduce((sum, s) => sum + s.completionPercent, 0) / all.length
-        return Math.round(avg)
+        return Math.round(all.reduce((sum, s) => sum + s.completionPercent, 0) / all.length)
+      },
+      getTotalMissing: () => {
+        return get().getAllSeries().reduce((sum, s) => sum + s.missingVolumes.length, 0)
+      },
+      getEstimatedValue: () => {
+        // Average Italian manga price ~€8
+        return get().collection.length * 8
       },
     }),
     { name: 'mangamate-collection' }

@@ -12,6 +12,7 @@ export interface Series {
   publisher: string
   language: string
   pricePerVolume?: number
+  mangadexId?: string
 }
 
 export interface Volume {

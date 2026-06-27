@@ -85,7 +85,7 @@ export default function ProfilePage() {
 
       {/* Stats grid */}
       <div className="px-5 pb-5">
-        <h2 style={{ fontSize: 15, fontWeight: 700, color: '#8E8E93', marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5, fontSize: 11 }}>
+        <h2 style={{ fontSize: 11, fontWeight: 700, color: '#8E8E93', marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 }}>
           Statistiche collezione
         </h2>
         <div className="grid grid-cols-2 gap-3">

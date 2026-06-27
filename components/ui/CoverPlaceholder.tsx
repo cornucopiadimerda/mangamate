@@ -12,6 +12,7 @@ interface CoverPlaceholderProps {
 export function CoverPlaceholder({ seriesId, title, volume, width = 80, height = 120, className = '' }: CoverPlaceholderProps) {
   const colors = SERIES_COLORS[seriesId] ?? { from: '#1a1a2e', to: '#16213e', text: '#E94560' }
   const initial = title.charAt(0).toUpperCase()
+  const numericHeight = typeof height === 'number' ? height : 120
 
   return (
     <div
@@ -19,7 +20,7 @@ export function CoverPlaceholder({ seriesId, title, volume, width = 80, height =
       style={{
         width,
         height,
-        minWidth: width,
+        minWidth: typeof width === 'number' ? width : undefined,
         background: `linear-gradient(160deg, ${colors.from}, ${colors.to})`,
         borderRadius: 6,
         padding: 6,
@@ -40,7 +41,7 @@ export function CoverPlaceholder({ seriesId, title, volume, width = 80, height =
       {/* Initial letter */}
       <span
         style={{
-          fontSize: Math.round(height * 0.38),
+          fontSize: Math.round(numericHeight * 0.38),
           fontWeight: 900,
           color: colors.text,
           opacity: 0.25,

@@ -1,26 +1,129 @@
 @import "tailwindcss";
 
+@theme {
+  --color-accent: #FF3B30;
+  --color-accent-muted: rgba(255, 59, 48, 0.15);
+  --color-surface: #111111;
+  --color-card: #1C1C1E;
+  --color-card-elevated: #2C2C2E;
+  --color-border: #2C2C2E;
+  --color-text-secondary: #8E8E93;
+  --color-text-tertiary: #48484A;
+  --color-success: #30D158;
+  --color-warning: #FFD60A;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #080808;
+  --foreground: #FFFFFF;
+  --tab-bar-height: 60px;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+html {
+  background: var(--background);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
+  overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar hidden for cleaner mobile look */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* Safe area utilities */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.pb-tab-safe {
+  padding-bottom: calc(var(--tab-bar-height) + env(safe-area-inset-bottom) + 16px);
+}
+
+/* Smooth scroll */
+.scroll-smooth {
+  scroll-behavior: smooth;
+}
+
+/* Volume shelf horizontal scroll */
+.volume-shelf {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Gradient overlays */
+.gradient-to-b-card {
+  background: linear-gradient(to bottom, transparent 0%, #1C1C1E 100%);
+}
+
+/* Shimmer loading effect */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    #1C1C1E 25%,
+    #2C2C2E 50%,
+    #1C1C1E 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Scan pulse animation */
+@keyframes scan-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.scan-pulse {
+  animation: scan-pulse 2s ease-in-out infinite;
+}
+
+/* Corner bracket corners for viewfinder */
+.viewfinder-corner {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-color: white;
+  border-style: solid;
+}
+
+/* Fade in animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s ease-out forwards;
+}
+
+/* Scale tap feedback */
+.tap-scale {
+  transition: transform 0.1s ease;
+}
+.tap-scale:active {
+  transform: scale(0.97);
 }

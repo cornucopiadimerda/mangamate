@@ -4,8 +4,8 @@ interface CoverPlaceholderProps {
   seriesId: string
   title: string
   volume?: number
-  width?: number
-  height?: number
+  width?: number | string
+  height?: number | string
   className?: string
 }
 
